@@ -2,7 +2,25 @@
 /*
 *	File description: This file is for the storage of the functions used in the encryption algorithm.
 */
-
+// Special multiplication for the mix calculation.
+uint8_t special_multiply_2(uint8_t a)
+{
+	uint8_t out = 0;
+	uint8_t dis = (a >> 7);
+	if (dis == 0)
+	{
+		out = (a << 1);
+	}
+	else if (dis == 1)
+	{
+		out = (a << 1) ^ 0x1b;
+	}
+	return out;
+}
+uint8_t special_multiply_3(uint8_t a)
+{
+	return special_multiply_2(a) ^ a;
+}
 // Assemble 16 8-bit array into 4 32-bit array.
 uint32_t* convert_8_32(uint8_t* to_be_converted)
 {
@@ -76,11 +94,7 @@ uint32_t* RotWord(uint32_t* to_be_rotated)
 		perror("Memory allocation failed.");
 		return NULL;
 	}
-	*out = *to_be_rotated;
-	uint32_t temp1 = *to_be_rotated;
-	uint32_t last = (temp1 >> 24);
-	*out <<= 8;
-	*out |= last;
+	*out = (*to_be_rotated << 8) | (*to_be_rotated >> 24);
 	return out;
 }
 // SubWord function, which substitutes the bytes.
@@ -93,18 +107,8 @@ uint8_t break_compare_sub(uint8_t to_be_broken)
 	uint8_t max = 0, min = 0;
 	seg[0] = (temp1 >> 4);
 	seg[1] = (temp2 &= 0b00001111);
-	if (seg[0] >= seg[1])
-	{
-		max = seg[0];
-		min = seg[1];
-	}
-	else if (seg[0] < seg[1])
-	{
-		max = seg[1];
-		min = seg[0];
-	}
 	//printf("- %x %x %x\n", min, max, sub_table[min][max]);
-	return sub_table[min][max];
+	return sub_table[seg[0]][seg[1]];
 }
 uint32_t* SubWord(uint32_t* to_be_substituted)
 {
@@ -172,15 +176,7 @@ uint32_t Rcon(int number)
 			return NULL;
 	}
 }
-// Perform the calculation for the calculation key 0-3.
-uint32_t* get_calculation_key_0_3(uint8_t* original_key)
-{
-	// Initialize W and set its values to 0.
-	uint32_t* W;
-	W = convert_8_32(original_key);
-	return W;
-}
-// Perform calculation for the calculation key 4-44.
+// Perform calculation for the calculation key 0-44.
 uint32_t* get_calculation_key_0_43(uint8_t* original_key)
 {
 	// Initialize the dynamic array and put the previous calculation key into the array.
@@ -191,10 +187,10 @@ uint32_t* get_calculation_key_0_43(uint8_t* original_key)
 		perror("Memory allocation failed.");
 		return NULL;
 	}
-	calculation_key_first = get_calculation_key_0_3(original_key);
+	calculation_key_first = convert_8_32(original_key);
 	for (int cyc = 0; cyc < 4; cyc++)
 	{
-		W[cyc] = *(calculation_key_first + cyc);
+		W[cyc] = calculation_key_first[cyc];
 	}
 	if (calculation_key_first)
 	{
@@ -326,10 +322,10 @@ uint8_t* get_Sd(uint8_t* Sc_0_15)
 	}
 	for (int cyc = 0; cyc < 4; cyc++)
 	{
-		Sd_8[0 + 4 * cyc] = (2 * Sc_0_15[0 + 4 * cyc]) ^ Sc_0_15[1 + 4 * cyc] ^ Sc_0_15[2 + 4 * cyc] ^ (3 * Sc_0_15[3 + 4 * cyc]);
-		Sd_8[1 + 4 * cyc] = Sc_0_15[0 + 4 * cyc] ^ Sc_0_15[1 + 4 * cyc] ^ (3 * Sc_0_15[2 + 4 * cyc]) ^ (2 * Sc_0_15[3 + 4 * cyc]);
-		Sd_8[2 + 4 * cyc] = Sc_0_15[0 + 4 * cyc] ^ (3 * Sc_0_15[1 + 4 * cyc]) ^ (2 * Sc_0_15[2 + 4 * cyc]) ^ Sc_0_15[3 + 4 * cyc];
-		Sd_8[3 + 4 * cyc] = (3 * Sc_0_15[0 + 4 * cyc]) ^ (2 * Sc_0_15[1 + 4 * cyc]) ^ Sc_0_15[2 + 4 * cyc] ^ Sc_0_15[3 + 4 * cyc];
+		Sd_8[0 + 4 * cyc] = special_multiply_2(Sc_0_15[0 + 4 * cyc]) ^ Sc_0_15[1 + 4 * cyc] ^ Sc_0_15[2 + 4 * cyc] ^ special_multiply_3(Sc_0_15[3 + 4 * cyc]);
+		Sd_8[1 + 4 * cyc] = Sc_0_15[0 + 4 * cyc] ^ Sc_0_15[1 + 4 * cyc] ^ special_multiply_3(Sc_0_15[2 + 4 * cyc]) ^ special_multiply_2(Sc_0_15[3 + 4 * cyc]);
+		Sd_8[2 + 4 * cyc] = Sc_0_15[0 + 4 * cyc] ^ special_multiply_3(Sc_0_15[1 + 4 * cyc]) ^ special_multiply_2(Sc_0_15[2 + 4 * cyc]) ^ Sc_0_15[3 + 4 * cyc];
+		Sd_8[3 + 4 * cyc] = special_multiply_3(Sc_0_15[0 + 4 * cyc]) ^ special_multiply_2(Sc_0_15[1 + 4 * cyc]) ^ Sc_0_15[2 + 4 * cyc] ^ Sc_0_15[3 + 4 * cyc];
 	}
 	if (Sc_0_15)
 	{
@@ -374,16 +370,6 @@ uint32_t* get_encryption_result(uint8_t* original_key, uint32_t* to_be_encrypted
 {
 	uint32_t* calculation_key;
 	calculation_key = get_calculation_key_0_43(original_key);
-	printf("CKeys : \n");
-	for (int cyc = 0; cyc < 44; cyc++)
-	{
-		printf("%08x", calculation_key[cyc]);
-		if ((cyc + 1) % 4 == 0)
-		{
-			printf("\n");
-		}
-	}
-	printf("\n");
 	uint8_t* Sa_0 = get_Sa_round_0(calculation_key, to_be_encrypted);
 	printf("Sa_0 : ");
 	for (int cyc = 0; cyc < 16; cyc++)

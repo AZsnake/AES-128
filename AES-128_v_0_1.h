@@ -4,6 +4,10 @@
 #include <stdio.h>
 #include <time.h>
 
+uint8_t special_multiply_2(uint8_t a);
+
+uint8_t special_multiply_3(uint8_t a);
+
 uint32_t* convert_8_32(uint8_t* to_be_converted);
 
 uint8_t* convert_32_8(uint32_t* to_be_converted);

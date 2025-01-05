@@ -6,12 +6,12 @@
 
 int main(void)
 {
-    // Initialize the original key, which is a 128-bit integer or 32 hex numbers in total. It is devided into 15 segments.
+    // Initialize the original key, which is a 128-bit integer or 32 hex numbers in total. It is divided into 15 segments.
     uint32_t* original_key_test = (uint32_t*)malloc(sizeof(uint32_t) * 4);
 	if (original_key_test == NULL)
 	{
 		perror("Memory allocation failed.");
-		return 1;
+		return 0;
 	}
     *(original_key_test) = 0x00010203;
     *(original_key_test + 1) = 0x04050607;
@@ -22,7 +22,7 @@ int main(void)
 	if (plain == NULL)
 	{
 		perror("Memory allocation failed.");
-		return 1;
+		return 0;
 	}
     *(plain) = 0x00112233;
     *(plain + 1) = 0x44556677;
