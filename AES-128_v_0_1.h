@@ -4,9 +4,11 @@
 #include <stdio.h>
 #include <time.h>
 
-uint8_t special_multiply_2(uint8_t a);
+static void print_8(uint8_t* to_be_printed);
 
-uint8_t special_multiply_3(uint8_t a);
+uint8_t special_multiply_2(uint8_t to_be_multiplied);
+
+uint8_t special_multiply_3(uint8_t to_be_multiplied);
 
 uint32_t* convert_8_32(uint8_t* to_be_converted);
 
@@ -20,23 +22,19 @@ uint8_t break_compare_sub(uint8_t to_be_broken);
 
 uint32_t* SubWord(uint32_t* to_be_substituted);
 
-uint32_t Rcon(int number);
+uint32_t RoundConstant(int number);
 
-uint32_t* get_calculation_key_0_3(uint8_t* original_key);
+uint32_t* expand_calculation_key_44(uint8_t* original_key);
 
-uint32_t* get_calculation_key_0_43(uint8_t* original_key);
+uint8_t* AddRoundKey(uint8_t* Sd_0_15, uint32_t* key_W, int cyc);
 
-uint8_t* get_Sa_round_0(uint32_t* key_W, uint32_t* plain);
+uint8_t* SubByte(uint8_t* to_be_substituted);
 
-uint8_t* get_Sa_round_n(uint8_t* Sa_0_15, uint32_t* key_W, int cyc);
+uint8_t* ShiftRows(uint8_t* to_be_shifted);
 
-uint8_t* get_Sb(uint8_t* Sa_0_3);
+uint8_t* MixColumns(uint8_t* to_be_mixed);
 
-uint8_t* get_Sc(uint8_t* Sb_0_15);
-
-uint8_t* get_Sd(uint8_t* Sc_0_15);
-
-uint32_t* get_encryption_result(uint8_t* original_key, uint32_t* to_be_encrypted);
+uint32_t* encrypt_AES_128(uint8_t* original_key, uint32_t* to_be_encrypted);
 
 static uint8_t sub_table[16][16] = { {0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76},
 									 {0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0},

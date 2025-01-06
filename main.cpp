@@ -13,7 +13,7 @@ int main(void)
 		perror("Memory allocation failed.");
 		return 0;
 	}
-    *(original_key_test) = 0x00010203;
+    *(original_key_test + 0) = 0x00010203;
     *(original_key_test + 1) = 0x04050607;
     *(original_key_test + 2) = 0x08090a0b;
     *(original_key_test + 3) = 0x0c0d0e0f;
@@ -24,15 +24,15 @@ int main(void)
 		perror("Memory allocation failed.");
 		return 0;
 	}
-    *(plain) = 0x00112233;
+    *(plain + 0) = 0x00112233;
     *(plain + 1) = 0x44556677;
     *(plain + 2) = 0x8899aabb;
     *(plain + 3) = 0xccddeeff;
     uint32_t* encryption_result;
-	encryption_result = get_encryption_result(original_key_test_8, plain);
+	encryption_result = encrypt_AES_128(original_key_test_8, plain);
     for (int cyc = 0; cyc < 4; cyc++)
     {
-        printf("%08x\n", encryption_result[cyc]);
+        printf("%08x", encryption_result[cyc]);
     }
     getchar();
     return 0;
