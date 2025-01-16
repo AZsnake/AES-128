@@ -1,4 +1,4 @@
-#include "AES-128_v_0_1.h"
+#include "AES-128_v_1_0.h"
 /*
 *	File description: This file is for the storage of the functions used in the encryption algorithm.
 */
@@ -12,7 +12,7 @@ static void print_8(uint8_t* to_be_printed)
 	}
 	printf("\n");
 }
-// Special multiplication for the mix calculation.
+// Special Galois field multiplication for the mix calculation.
 uint8_t gf_multiply(uint8_t x, uint8_t multiplier)
 {
 	uint8_t result = 0;

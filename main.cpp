@@ -1,8 +1,8 @@
-// AES-128.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 #include <stdio.h>
-#include "AES-128_v_0_1.h"
+#include "AES-128_v_1_0.h"
+/*
+*	File description: This file contains the main function.
+*/
 
 int main(void)
 {
