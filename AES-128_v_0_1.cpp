@@ -13,38 +13,24 @@ static void print_8(uint8_t* to_be_printed)
 	printf("\n");
 }
 // Special multiplication for the mix calculation.
-uint8_t special_multiply_2(uint8_t to_be_multiplied)
+uint8_t gf_multiply(uint8_t x, uint8_t multiplier)
 {
-	uint8_t out = 0;
-	if (to_be_multiplied >> 7 == 1)
+	uint8_t result = 0;
+	for (int cyc = 0; cyc < 8; cyc++)
 	{
-		out = (to_be_multiplied << 1) ^ 0x1b; //Polynomial multiplication operation and modulo operation.
+		if (multiplier & 0x01) // Get the last digit of the multiplier.
+		{
+			result ^= x;
+		}
+		uint8_t carry = x & 0x80; // Get the most significant bit.
+		x <<= 1;
+		if (carry)
+		{
+			x ^= 0x1b;
+		}
+		multiplier >>= 1;
 	}
-	else if (to_be_multiplied >> 7 == 0)
-	{
-		out = to_be_multiplied << 1;
-	}
-	return out;
-}
-uint8_t special_multiply_3(uint8_t to_be_multiplied)
-{
-	return special_multiply_2(to_be_multiplied) ^ to_be_multiplied;
-}
-uint8_t special_multiply_9(uint8_t to_be_multiplied)
-{
-	return special_multiply_3(special_multiply_3(to_be_multiplied));
-}
-uint8_t special_multiply_b(uint8_t to_be_multiplied) // 11
-{
-	return special_multiply_3(special_multiply_3(to_be_multiplied)) ^ special_multiply_2(to_be_multiplied);
-}
-uint8_t special_multiply_d(uint8_t to_be_multiplied) // 13
-{
-	return special_multiply_3(special_multiply_3(to_be_multiplied)) ^ special_multiply_2(special_multiply_2(to_be_multiplied));
-}
-uint8_t special_multiply_e(uint8_t to_be_multiplied) // 14
-{
-	return special_multiply_3(special_multiply_3(to_be_multiplied)) ^ special_multiply_3(to_be_multiplied) ^ special_multiply_2(to_be_multiplied); // Iteration of the functions above.
+	return result;
 }
 // Assemble 16 8-bit array into 4 32-bit array.
 uint32_t* convert_8_32(uint8_t* to_be_converted)
@@ -223,6 +209,11 @@ uint32_t* expand_calculation_key_44(uint8_t* original_key)
 		return NULL;
 	}
 	uint8_t* original_key_8 = (uint8_t*)malloc(sizeof(uint8_t) * 16);
+	if (original_key_8 == NULL)
+	{
+		perror("Memory allocation failed.");
+		return NULL;
+	}
 	for (int cyc = 0; cyc < 16; cyc++)
 	{
 		original_key_8[cyc] = original_key[cyc];
@@ -384,10 +375,10 @@ uint8_t* MixColumns(uint8_t* to_be_mixed)
 	}
 	for (int cyc = 0; cyc < 4; cyc++)
 	{
-		output[0 + 4 * cyc] = special_multiply_2(to_be_mixed[0 + 4 * cyc]) ^ special_multiply_3(to_be_mixed[1 + 4 * cyc]) ^ to_be_mixed[2 + 4 * cyc] ^ to_be_mixed[3 + 4 * cyc];
-		output[1 + 4 * cyc] = to_be_mixed[0 + 4 * cyc] ^ special_multiply_2(to_be_mixed[1 + 4 * cyc]) ^ special_multiply_3(to_be_mixed[2 + 4 * cyc]) ^ to_be_mixed[3 + 4 * cyc];
-		output[2 + 4 * cyc] = to_be_mixed[0 + 4 * cyc] ^ to_be_mixed[1 + 4 * cyc] ^ special_multiply_2(to_be_mixed[2 + 4 * cyc]) ^ special_multiply_3(to_be_mixed[3 + 4 * cyc]);
-		output[3 + 4 * cyc] = special_multiply_3(to_be_mixed[0 + 4 * cyc]) ^ to_be_mixed[1 + 4 * cyc] ^ to_be_mixed[2 + 4 * cyc] ^ special_multiply_2(to_be_mixed[3 + 4 * cyc]);
+		output[0 + 4 * cyc] = gf_multiply(to_be_mixed[0 + 4 * cyc], 0x02) ^ gf_multiply(to_be_mixed[1 + 4 * cyc], 0x03) ^ gf_multiply(to_be_mixed[2 + 4 * cyc], 0x01) ^ gf_multiply(to_be_mixed[3 + 4 * cyc], 0x01);
+		output[1 + 4 * cyc] = gf_multiply(to_be_mixed[0 + 4 * cyc], 0x01) ^ gf_multiply(to_be_mixed[1 + 4 * cyc], 0x02) ^ gf_multiply(to_be_mixed[2 + 4 * cyc], 0x03) ^ gf_multiply(to_be_mixed[3 + 4 * cyc], 0x01);
+		output[2 + 4 * cyc] = gf_multiply(to_be_mixed[0 + 4 * cyc], 0x01) ^ gf_multiply(to_be_mixed[1 + 4 * cyc], 0x01) ^ gf_multiply(to_be_mixed[2 + 4 * cyc], 0x02) ^ gf_multiply(to_be_mixed[3 + 4 * cyc], 0x03);
+		output[3 + 4 * cyc] = gf_multiply(to_be_mixed[0 + 4 * cyc], 0x03) ^ gf_multiply(to_be_mixed[1 + 4 * cyc], 0x01) ^ gf_multiply(to_be_mixed[2 + 4 * cyc], 0x01) ^ gf_multiply(to_be_mixed[3 + 4 * cyc], 0x02);
 	}
 	/*
 	* The matrix above is: |02 03 01 01|
@@ -412,10 +403,10 @@ uint8_t* iMixColumns(uint8_t* to_be_imixed)
 	}
 	for (int cyc = 0; cyc < 4; cyc++)
 	{
-		output[0 + 4 * cyc] = special_multiply_e(to_be_imixed[0 + 4 * cyc]) ^ special_multiply_b(to_be_imixed[1 + 4 * cyc]) ^ special_multiply_d(to_be_imixed[2 + 4 * cyc]) ^ special_multiply_9(to_be_imixed[3 + 4 * cyc]);
-		output[1 + 4 * cyc] = special_multiply_9(to_be_imixed[0 + 4 * cyc]) ^ special_multiply_e(to_be_imixed[1 + 4 * cyc]) ^ special_multiply_b(to_be_imixed[2 + 4 * cyc]) ^ special_multiply_d(to_be_imixed[3 + 4 * cyc]);
-		output[2 + 4 * cyc] = special_multiply_d(to_be_imixed[0 + 4 * cyc]) ^ special_multiply_9(to_be_imixed[1 + 4 * cyc]) ^ special_multiply_e(to_be_imixed[2 + 4 * cyc]) ^ special_multiply_b(to_be_imixed[3 + 4 * cyc]);
-		output[3 + 4 * cyc] = special_multiply_b(to_be_imixed[0 + 4 * cyc]) ^ special_multiply_d(to_be_imixed[1 + 4 * cyc]) ^ special_multiply_9(to_be_imixed[2 + 4 * cyc]) ^ special_multiply_e(to_be_imixed[3 + 4 * cyc]);
+		output[0 + 4 * cyc] = gf_multiply(to_be_imixed[0 + 4 * cyc], 0x0e) ^ gf_multiply(to_be_imixed[1 + 4 * cyc], 0x0b) ^ gf_multiply(to_be_imixed[2 + 4 * cyc], 0x0d) ^ gf_multiply(to_be_imixed[3 + 4 * cyc], 0x09);
+		output[1 + 4 * cyc] = gf_multiply(to_be_imixed[0 + 4 * cyc], 0x09) ^ gf_multiply(to_be_imixed[1 + 4 * cyc], 0x0e) ^ gf_multiply(to_be_imixed[2 + 4 * cyc], 0x0b) ^ gf_multiply(to_be_imixed[3 + 4 * cyc], 0x0d);
+		output[2 + 4 * cyc] = gf_multiply(to_be_imixed[0 + 4 * cyc], 0x0d) ^ gf_multiply(to_be_imixed[1 + 4 * cyc], 0x09) ^ gf_multiply(to_be_imixed[2 + 4 * cyc], 0x0e) ^ gf_multiply(to_be_imixed[3 + 4 * cyc], 0x0b);
+		output[3 + 4 * cyc] = gf_multiply(to_be_imixed[0 + 4 * cyc], 0x0b) ^ gf_multiply(to_be_imixed[1 + 4 * cyc], 0x0d) ^ gf_multiply(to_be_imixed[2 + 4 * cyc], 0x09) ^ gf_multiply(to_be_imixed[3 + 4 * cyc], 0x0e);
 	}
 	/*
 	* The matrix above is: |0e 0b 0d 09|
@@ -435,18 +426,7 @@ uint32_t* encrypt_AES_128(uint8_t* original_key, uint32_t* to_be_encrypted)
 	uint32_t* calculation_key;
 	calculation_key = expand_calculation_key_44(original_key);
 	uint8_t* state;
-	// Malloc calculation_key_32, which is a duplicate of the original calculation_key. So during the convert operation, calculation_key won't be freed.
-	uint32_t* calculation_key_32 = (uint32_t*)malloc(sizeof(uint32_t) * 44);
-	if (calculation_key_32 == NULL)
-	{
-		perror("Memory allocation failed.");
-		return NULL;
-	}
-	for (int cyc = 0; cyc < 44; cyc++)
-	{
-		*(calculation_key_32 + cyc) = *(calculation_key + cyc);
-	}
-	state = AddRoundKey(convert_32_8(calculation_key_32), to_be_encrypted, 0);
+	state = AddRoundKey(convert_32_8(to_be_encrypted), calculation_key, 0);
 	for (int cyc = 1; cyc < 10; cyc++)
 	{
 		state = SubByte(state);
@@ -466,24 +446,14 @@ uint32_t* decrypt_AES_128(uint8_t* original_key, uint32_t* to_be_decrypted)
 	uint32_t* calculation_key;
 	calculation_key = expand_calculation_key_44(original_key);
 	uint8_t* state;
-	// Malloc calculation_key_32, which is a duplicate of the original calculation_key. So during the convert operation, calculation_key won't be freed.
-	uint32_t* calculation_key_32 = (uint32_t*)malloc(sizeof(uint32_t) * 44);
-	if (calculation_key_32 == NULL)
-	{
-		perror("Memory allocation failed.");
-		return NULL;
-	}
-	for (int cyc = 0; cyc < 44; cyc++)
-	{
-		*(calculation_key_32 + cyc) = *(calculation_key + cyc);
-	}
-	state = AddRoundKey(convert_32_8(calculation_key_32), to_be_decrypted, 10);
+	state = AddRoundKey(convert_32_8(to_be_decrypted), calculation_key, 10);
 	for (int cyc = 9; cyc > 0; cyc--)
 	{
 		state = iShiftRows(state);
 		state = iSubByte(state);
 		state = AddRoundKey(state, calculation_key, cyc);
 		state = iMixColumns(state);
+		
 	}
 	state = iShiftRows(state);
 	state = iSubByte(state);

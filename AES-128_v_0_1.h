@@ -6,12 +6,7 @@
 
 static void print_8(uint8_t* to_be_printed);
 
-uint8_t special_multiply_2(uint8_t to_be_multiplied);
-uint8_t special_multiply_3(uint8_t to_be_multiplied);
-uint8_t special_multiply_9(uint8_t to_be_multiplied);
-uint8_t special_multiply_b(uint8_t to_be_multiplied);
-uint8_t special_multiply_d(uint8_t to_be_multiplied);
-uint8_t special_multiply_e(uint8_t to_be_multiplied);
+uint8_t gf_multiply(uint8_t x, uint8_t multiplier);
 
 uint32_t* convert_8_32(uint8_t* to_be_converted);
 uint8_t* convert_32_8(uint32_t* to_be_converted);
